@@ -36,7 +36,6 @@ public class Spring : MonoBehaviour
         }
     }
 
-
     private void OnDisable()
     {
         StopAllCoroutines();

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 
+[RequireComponent(typeof(GetOnRoad))]
 public class Wheel : MonoBehaviour
 {
     private WheelSettings _wheelSettings;

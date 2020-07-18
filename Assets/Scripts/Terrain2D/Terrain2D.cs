@@ -23,13 +23,13 @@ public class Terrain2D
         terrainGO = gameObject;
         _settings = settings;
 
-        int verticesCount = settings.meshResolution * 2;
+        int verticesCount = settings.meshResolution * 2; // TOP + BOTTOM
         int trianglesCount = verticesCount * 3;
 
         _vertices = new Vector3[verticesCount];
         _triangles = new int[trianglesCount];
         _uv = new Vector2[verticesCount];
-        _polygonColliderVerices = new Vector2[settings.meshResolution + 2]; // 2 BOTTOM POINTS FOR COLLIDER LEGT AND RIGHT
+        _polygonColliderVerices = new Vector2[settings.meshResolution + 2]; // TOP LINE + 2 BOTTOM POINTS FOR COLLIDER LEFT AND RIGHT
 
         _mesh = new Mesh();
 
@@ -42,7 +42,7 @@ public class Terrain2D
         if (_meshFilter == null) _meshFilter = terrainGO.AddComponent<MeshFilter>();
         _meshFilter.mesh = _mesh;
 
-        if (_settings.isPhysics) { 
+        if (_settings.isPhysics) {  // FAST ITTERATION NOT GOOD FOR PRODUCTION
             if (_polygonCollider == null) _polygonCollider = terrainGO.GetComponent<PolygonCollider2D>();
             if (_polygonCollider == null) _polygonCollider = terrainGO.AddComponent<PolygonCollider2D>();
         }
@@ -51,23 +51,23 @@ public class Terrain2D
     }
     private void GenerateTerrain()
     {
-        int trianglesInex = 0;
+        int trianglesIndex = 0;
         float lastUVPoint = 0;
-        float _randomRange = Random.Range(0, 10f);
+        float _randomForNoise = Random.Range(0, 10f); // USED FOR PERLIN NOISE
 
         for (int i = 0; i < _vertices.Length; i++)
         {
-            Vector3 position = ( i % 2 == 0 ) ? TopLineGenerator( i, _randomRange ) : Vector3.up * _settings.bottomLine; //  TOP OR BOTTOM POSITION
+            Vector3 position = ( i % 2 == 0 ) ? TopLineGenerator( i, _randomForNoise ) : Vector3.up * _settings.bottomLine; //  TOP OR BOTTOM POSITION
             position.x += _settings.meshOffset * i - _settings.meshOffset * ( i % 2 ); // X OFFSET
             _vertices[i] = position;
 
             GenerateUV(ref lastUVPoint, i);
             
             if ( i > 1 && ( (i + 1 ) % 2) == 0 ) // PASS EACH 2 VERTICES START FROM 4
-                GenerateTraingles(ref trianglesInex, i + 1 ); // GENERATE 2 TRAINGLES OR ONE QUAD
+                GenerateTraingles(ref trianglesIndex, i + 1 ); // GENERATE 2 TRAINGLES OR ONE QUAD
 
-            if( i % 2 == 0 && _settings.isPhysics) // PASS EACH TOP VERTICES
-                GeneratePolygonVerices(i);
+            if( i % 2 == 0 && _settings.isPhysics) // PASS EACH TOP VERTICES FOR POLYGON COLLIDER
+                AddPolygonColliderVerices(i);
         }
 
         _mesh.vertices = _vertices;
@@ -90,7 +90,7 @@ public class Terrain2D
         return Vector3.zero + topOffset;
     }
 
-    private float SmoothOnEdges(float noise, int position, float percentOfLenght)
+    private float SmoothOnEdges(float noise, int position, float percentOfLenght) // USED FOR SEAMLESS CONNECT TERRAINS
     {
         if (percentOfLenght == 0) return noise;
         if (percentOfLenght >= 0.5f) return 0f;
@@ -137,7 +137,7 @@ public class Terrain2D
         lastUVpoint = x;
     }
 
-    private void GeneratePolygonVerices(int i)
+    private void AddPolygonColliderVerices(int i)
     {
         _polygonColliderVerices[ i / 2 ] = _vertices[i];
     }
@@ -161,6 +161,6 @@ public class Terrain2D
     public void UpdateTerrain()
     {
         GenerateTerrain();
-        if (_settings.isPhysics) UpdatePolygonCollider();
+        if (_settings.isPhysics) UpdatePolygonCollider();  // FAST ITTERATION NOT GOOD FOR PRODUCTION
     }  
 }
